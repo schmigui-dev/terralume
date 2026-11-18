@@ -1,6 +1,5 @@
 import { AdaptiveDpr, Stars } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
-import { Suspense, useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { EarthquakeMarkers } from '#/features/layers/earthquakes/EarthquakeMarkers'
 import type { EarthquakeEvent } from '#/shared/types/geo'
@@ -12,9 +11,10 @@ interface Props {
   events: EarthquakeEvent[]
   onReady?: () => void
   onContextLost?: () => void
+  onTextureError?: (e: Error) => void
 }
 
-export default function Scene({ events, onReady, onContextLost }: Props) {
+export default function Scene({ events, onReady, onContextLost, onTextureError }: Props) {
   const quality = useApp((s) => s.quality)
   const quakesOn = useApp((s) => s.layers.earthquakes)
   return (
@@ -36,28 +36,10 @@ export default function Scene({ events, onReady, onContextLost }: Props) {
     >
       <color attach="background" args={['#020308']} />
       <Stars radius={60} depth={40} count={quality === 'high' ? 5000 : 1500} factor={2.2} saturation={0} fade speed={0} />
-      <Suspense fallback={null}>
-        <Earth />
-        <ReadySignal onReady={onReady} />
-      </Suspense>
+      <Earth onReady={onReady} onError={onTextureError} />
       {quakesOn && <EarthquakeMarkers events={events} />}
       <CameraRig events={events} />
       <AdaptiveDpr pixelated={false} />
     </Canvas>
   )
-}
-
-function ReadySignal({ onReady }: { onReady?: () => void }) {
-  // Rendered inside Suspense → mounts only once textures are loaded.
-  useIdempotentEffect(onReady)
-  return null
-}
-
-function useIdempotentEffect(fn?: () => void) {
-  const done = useRef(false)
-  useEffect(() => {
-    if (done.current) return
-    done.current = true
-    fn?.()
-  }, [fn])
 }

@@ -12,6 +12,7 @@ import { Timeline } from '#/features/timeline/Timeline'
 import { useClockDriver } from '#/features/timeline/useClockDriver'
 import { useCoarseTime } from '#/features/timeline/useCoarseTime'
 import type { EarthquakeEvent } from '#/shared/types/geo'
+import { LOW_QUALITY_MEDIA } from '#/shared/utils/quality'
 import { formatUtc } from '#/shared/utils/time'
 import { useApp } from '#/stores/app'
 
@@ -35,11 +36,13 @@ function Home() {
   const [contextLost, setContextLost] = useState(false)
   const onReady = useCallback(() => setReady(true), [])
   const onContextLost = useCallback(() => setContextLost(true), [])
+  const [textureError, setTextureError] = useState(false)
+  const onTextureError = useCallback(() => setTextureError(true), [])
 
   useEffect(() => {
     setWebgl(supportsWebGL2())
     if (window.matchMedia('(max-width: 640px)').matches) useApp.getState().setPanel(null)
-    if (window.matchMedia('(max-width: 640px), (pointer: coarse)').matches) useApp.getState().setQuality('low')
+    if (window.matchMedia(LOW_QUALITY_MEDIA).matches) useApp.getState().setQuality('low')
   }, [])
 
   const globeAvailable = webgl === true && !contextLost
@@ -49,12 +52,17 @@ function Home() {
       <ClientOnly>
         {globeAvailable && (
           <Suspense fallback={null}>
-            <Scene events={events} onReady={onReady} onContextLost={onContextLost} />
+            <Scene events={events} onReady={onReady} onContextLost={onContextLost} onTextureError={onTextureError} />
           </Suspense>
         )}
       </ClientOnly>
 
-      <LoadingVeil hidden={ready || webgl === false || contextLost} />
+      <LoadingVeil hidden={ready || webgl === false || contextLost || textureError} />
+      {textureError && !ready && (
+        <p role="alert" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center text-sm text-ink-soft">
+          Earth imagery failed to load. Earthquake data and the event list still work.
+        </p>
+      )}
 
       <div className="pointer-events-none absolute inset-0 flex flex-col gap-3 p-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:p-5">
         <TopBar />

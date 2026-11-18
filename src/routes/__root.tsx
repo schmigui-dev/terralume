@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createRootRoute, HeadContent, Outlet, Scripts } from '@tanstack/react-router'
 import { useState } from 'react'
+import { HIGH_QUALITY_MEDIA, LOW_QUALITY_MEDIA } from '#/shared/utils/quality'
 import appCss from '../styles.css?url'
 
 export const Route = createRootRoute({
@@ -23,7 +24,21 @@ export const Route = createRootRoute({
         href: 'https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap',
       },
       { rel: 'stylesheet', href: appCss },
-      { rel: 'preload', href: '/textures/earth_day_4096.jpg', as: 'image', crossOrigin: 'anonymous' },
+      // Mirror the quality default (low on phones / touch) so we never preload the wrong set.
+      {
+        rel: 'preload',
+        href: '/textures/earth_day_4096.jpg',
+        as: 'image',
+        crossOrigin: 'anonymous',
+        media: HIGH_QUALITY_MEDIA,
+      },
+      {
+        rel: 'preload',
+        href: '/textures/earth_day_2048.jpg',
+        as: 'image',
+        crossOrigin: 'anonymous',
+        media: LOW_QUALITY_MEDIA,
+      },
     ],
   }),
   shellComponent: RootDocument,
